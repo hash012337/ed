@@ -44,18 +44,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .eq('status', 'active')
         .gte('ends_at', nowISO)
         .limit(1)
-        .single();
+        .maybeSingle();
 
       console.log('Subscription check result:', data, 'error:', error);
 
       if (error) {
-        if (error.code === 'PGRST116') {
-          // No subscription found
-          setHasSubscription(false);
-        } else {
-          console.error('Error checking subscription:', error);
-          setHasSubscription(false);
-        }
+        console.error('Error checking subscription:', error);
+        setHasSubscription(false);
         return;
       }
 
