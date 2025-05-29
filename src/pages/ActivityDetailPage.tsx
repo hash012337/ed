@@ -10,27 +10,28 @@ const ActivityDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const [started, setStarted] = useState(false);
   const { user, hasSubscription } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
 
   // Find the activity by id (string)
   const activity: Activity | undefined = activitiesData.find((act) => act.id === activityId);
-console.log('User:', user);
-console.log('Has subscription:', hasSubscription);
-console.log('Activity:', activity);
+
   useEffect(() => {
-  if (hasSubscription === null) {
-    // subscription check still loading, do nothing yet
-    return;
-  }
+    // Wait for subscription check to complete
+    if (hasSubscription === null) {
+      setIsLoading(true);
+      return;
+    }
 
-  if (!hasSubscription) {
-    navigate('/subscription');
-  }
-}, [hasSubscription, navigate]);
+    setIsLoading(false);
 
-
+    // Only redirect if we're sure there's no subscription
+    if (hasSubscription === false && user) {
+      navigate('/subscription');
+    }
+  }, [hasSubscription, navigate, user]);
 
   // Show loading while checking subscription or activity not found yet
-  if (hasSubscription === null) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-gray-600 text-lg">Loading...</p>
@@ -38,8 +39,14 @@ console.log('Activity:', activity);
     );
   }
 
-  if (!activity || !hasSubscription) {
-    // In theory, this won't be hit because of redirects, but safeguard
+  // If no activity found or user not logged in, redirect
+  if (!activity) {
+    return null;
+  }
+
+  // If user is not logged in, don't check subscription
+  if (!user) {
+    navigate('/login');
     return null;
   }
 
