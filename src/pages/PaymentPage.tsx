@@ -46,26 +46,25 @@ const PaymentPage = () => {
     try {
       const last4 = cardNumber.slice(-4);
       
-      // First, find the pending subscription for this specific plan
-      const { data: pendingSubscription, error: fetchError } = await supabase
+      // Find pending subscriptions for this specific plan
+      const { data: pendingSubscriptions, error: fetchError } = await supabase
         .from('user_subscriptions')
         .select('*')
         .eq('user_id', user.id)
         .eq('status', 'pending')
-        .eq('plan_id', planId)
-        .single();
+        .eq('plan_id', planId);
 
       if (fetchError) throw fetchError;
 
-      if (!pendingSubscription) {
+      if (!pendingSubscriptions || pendingSubscriptions.length === 0) {
         throw new Error('No pending subscription found');
       }
 
-      // Update subscription status to active
+      // Update the first pending subscription to active
       const { error: updateError } = await supabase
         .from('user_subscriptions')
         .update({ status: 'active' })
-        .eq('id', pendingSubscription.id);
+        .eq('id', pendingSubscriptions[0].id);
 
       if (updateError) throw updateError;
 
