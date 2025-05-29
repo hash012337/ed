@@ -11,6 +11,7 @@ const ActivityDetailPage: React.FC = () => {
   const [started, setStarted] = useState(false);
   const { user, hasSubscription } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
+  const [redirected, setRedirected] = useState(false);
 
   // Find the activity by id (string)
   const activity: Activity | undefined = activitiesData.find((act) => act.id === activityId);
@@ -24,11 +25,12 @@ const ActivityDetailPage: React.FC = () => {
 
     setIsLoading(false);
 
-    // Only redirect if we're sure there's no subscription
-    if (hasSubscription === false && user) {
+    // Only redirect once and only if user is logged in and has no subscription
+    if (!redirected && hasSubscription === false && user) {
+      setRedirected(true);
       navigate('/subscription');
     }
-  }, [hasSubscription, navigate, user]);
+  }, [hasSubscription, navigate, user, redirected]);
 
   // Show loading while checking subscription or activity not found yet
   if (isLoading) {
@@ -39,12 +41,13 @@ const ActivityDetailPage: React.FC = () => {
     );
   }
 
-  // If no activity found or user not logged in, redirect
+  // If no activity found, redirect to activities page
   if (!activity) {
+    navigate('/activities');
     return null;
   }
 
-  // If user is not logged in, don't check subscription
+  // If user is not logged in, redirect to login
   if (!user) {
     navigate('/login');
     return null;
