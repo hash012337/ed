@@ -58,32 +58,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const checkSubscription = async (userId: string) => {
-  try {
-    const nowISO = new Date().toISOString();
-    console.log('Checking subscription for user:', userId, 'at', nowISO);
+    try {
+      const nowISO = new Date().toISOString();
+      console.log('Checking subscription for user:', userId, 'at', nowISO);
 
-    const { data, error } = await supabase
-      .from('user_subscriptions')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('status', 'active')
-      .gte('ends_at', nowISO)
-      .single();
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .gte('ends_at', nowISO);
 
-    console.log('Subscription check result:', data, 'error:', error);
+      console.log('Subscription check result:', data, 'error:', error);
 
-    if (error) {
+      if (error) {
+        console.error('Error checking subscription:', error);
+        setHasSubscription(false);
+        return;
+      }
+
+      // Check if data array exists and has at least one active subscription
+      setHasSubscription(!!data && data.length > 0);
+    } catch (error) {
+      console.error('Error checking subscription:', error);
       setHasSubscription(false);
-      return;
     }
-
-    setHasSubscription(!!data);
-  } catch (error) {
-    console.error('Error checking subscription:', error);
-    setHasSubscription(false);
-  }
-};
-
+  };
 
   const login = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
