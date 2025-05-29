@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const PaymentPage = () => {
   const [name, setName] = useState('');
@@ -14,12 +14,19 @@ const PaymentPage = () => {
 
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const planId = searchParams.get('planId');
 
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!user) {
       setError('You must be logged in.');
+      return;
+    }
+
+    if (!planId) {
+      setError('Invalid subscription plan.');
       return;
     }
 
@@ -39,12 +46,13 @@ const PaymentPage = () => {
     try {
       const last4 = cardNumber.slice(-4);
       
-      // First, find the pending subscription
+      // First, find the pending subscription for this specific plan
       const { data: pendingSubscription, error: fetchError } = await supabase
         .from('user_subscriptions')
         .select('*')
         .eq('user_id', user.id)
         .eq('status', 'pending')
+        .eq('plan_id', planId)
         .single();
 
       if (fetchError) throw fetchError;
