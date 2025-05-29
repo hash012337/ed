@@ -11,11 +11,11 @@ import { User } from '@supabase/supabase-js';
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  hasSubscription: boolean | null;  // <-- null means loading/checking
+  hasSubscription: boolean | null;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  checkSubscription: (userId: string) => Promise<void>; // Added this
+  checkSubscription: (userId: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -42,18 +42,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .select('*')
         .eq('user_id', userId)
         .eq('status', 'active')
-        .gte('ends_at', nowISO);
+        .gte('ends_at', nowISO)
+        .limit(1)
+        .single();
 
       console.log('Subscription check result:', data, 'error:', error);
 
       if (error) {
-        console.error('Error checking subscription:', error);
-        setHasSubscription(false);
+        if (error.code === 'PGRST116') {
+          // No subscription found
+          setHasSubscription(false);
+        } else {
+          console.error('Error checking subscription:', error);
+          setHasSubscription(false);
+        }
         return;
       }
 
-      // Check if data array exists and has at least one active subscription
-      setHasSubscription(!!data && data.length > 0);
+      setHasSubscription(!!data);
     } catch (error) {
       console.error('Error checking subscription:', error);
       setHasSubscription(false);
@@ -129,7 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         login,
         register,
         logout,
-        checkSubscription, // Added this
+        checkSubscription,
       }}
     >
       {children}
