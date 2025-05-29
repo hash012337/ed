@@ -12,7 +12,7 @@ const PaymentPage = () => {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const { user } = useAuth();
+  const { user, checkSubscription } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const planId = searchParams.get('planId');
@@ -79,6 +79,9 @@ const PaymentPage = () => {
         });
 
       if (paymentError) throw paymentError;
+
+      // Update subscription status in context
+      await checkSubscription(user.id);
 
       setSuccess(true);
       

@@ -15,6 +15,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  checkSubscription: (userId: string) => Promise<void>; // Added this
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -29,33 +30,7 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [hasSubscription, setHasSubscription] = useState<boolean | null>(null); // changed here
-
-  useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        checkSubscription(session.user.id);
-      } else {
-        setHasSubscription(false); // user logged out, no subscription
-      }
-    });
-
-    // Check current session once on mount
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        checkSubscription(session.user.id);
-      } else {
-        setHasSubscription(false);
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
+  const [hasSubscription, setHasSubscription] = useState<boolean | null>(null);
 
   const checkSubscription = async (userId: string) => {
     try {
@@ -84,6 +59,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setHasSubscription(false);
     }
   };
+
+  useEffect(() => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        checkSubscription(session.user.id);
+      } else {
+        setHasSubscription(false);
+      }
+    });
+
+    // Check current session once on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        checkSubscription(session.user.id);
+      } else {
+        setHasSubscription(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const login = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -128,6 +129,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         login,
         register,
         logout,
+        checkSubscription, // Added this
       }}
     >
       {children}
